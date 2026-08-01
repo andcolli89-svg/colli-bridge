@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: colli-bridge
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: LOCAL_CALLBACK_URL
+        value: http://localhost:8795/api/ml/callback
+      - key: COLLI_BRIDGE_KEY
+        sync: false
+      - key: ML_APPLICATION_ID
+        sync: false
