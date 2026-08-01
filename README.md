@@ -1,13 +1,28 @@
-# Colli Bridge 1.0.0
+# Colli Bridge 1.1.0 — callback na raiz
 
 Bridge HTTPS para o Colli Marketplace Manager.
 
+## Mudança desta versão
+
+O endereço raiz também recebe o retorno OAuth:
+
+```text
+https://colli-bridge.onrender.com
+```
+
+Quando a raiz recebe `code`, `state` ou erro do Mercado Livre, encaminha ao programa local. Sem esses parâmetros, continua funcionando como diagnóstico de saúde. O callback antigo continua compatível:
+
+```text
+https://colli-bridge.onrender.com/api/ml/callback
+```
+
 ## Funções
 
+- `GET /`: saúde; com parâmetros OAuth, encaminha ao programa local.
 - `GET /api/health`: confirma que o serviço está online.
-- `GET /api/ml/callback`: recebe o OAuth do Mercado Livre e redireciona ao programa local.
-- `POST /api/ml/notifications`: recebe notificações sem exigir uma chave que o Mercado Livre não envia.
-- `GET /api/ml/events`: entrega a fila ao programa local, protegida por `COLLI_BRIDGE_KEY`.
+- `GET /api/ml/callback`: callback alternativo compatível.
+- `POST /api/ml/notifications`: recebe notificações do Mercado Livre.
+- `GET /api/ml/events`: entrega a fila ao programa, protegida por `COLLI_BRIDGE_KEY`.
 
 ## Variáveis no Render
 
@@ -17,20 +32,23 @@ COLLI_BRIDGE_KEY=uma-chave-longa-e-aleatoria
 ML_APPLICATION_ID=ID-da-aplicacao-do-Mercado-Livre
 ```
 
-Use a mesma `COLLI_BRIDGE_KEY` no `.env` do programa instalado.
+## Teste recomendado no DevCenter
 
-## URLs no DevCenter
-
-Redirect URI:
+Cadastre as duas URIs temporariamente:
 
 ```text
+https://colli-bridge.onrender.com
 https://colli-bridge.onrender.com/api/ml/callback
 ```
 
-Notificações:
+No programa, use inicialmente:
+
+```env
+ML_REDIRECT_URI=https://colli-bridge.onrender.com
+```
+
+A URL de notificações permanece:
 
 ```text
 https://colli-bridge.onrender.com/api/ml/notifications
 ```
-
-Não coloque a chave na URL pública de notificações.

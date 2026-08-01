@@ -14,7 +14,9 @@ try {
   if (denied.status !== 401) throw new Error('Fila sem proteção');
   const feed = await fetch(`http://127.0.0.1:${port}/api/ml/events`, {headers:{'x-colli-key':key}}).then(r=>r.json());
   if (!feed.events?.length || feed.events[0].payload.topic !== 'questions') throw new Error('Evento não entrou na fila');
-  const cb = await fetch(`http://127.0.0.1:${port}/api/ml/callback?code=abc&state=xyz`, {redirect:'manual'});
-  if (cb.status !== 302 || !cb.headers.get('location')?.includes('code=abc')) throw new Error('Callback OAuth falhou');
-  console.log('OK: health, callback, webhook público e fila privada validados.');
+  const cbPath = await fetch(`http://127.0.0.1:${port}/api/ml/callback?code=abc&state=xyz`, {redirect:'manual'});
+  if (cbPath.status !== 302 || !cbPath.headers.get('location')?.includes('code=abc')) throw new Error('Callback OAuth com path falhou');
+  const cbRoot = await fetch(`http://127.0.0.1:${port}/?code=def&state=uvw`, {redirect:'manual'});
+  if (cbRoot.status !== 302 || !cbRoot.headers.get('location')?.includes('code=def')) throw new Error('Callback OAuth na raiz falhou');
+  console.log('OK: health, callbacks raiz/path, webhook público e fila privada validados.');
 } finally { child.kill('SIGTERM'); }

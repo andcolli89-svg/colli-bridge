@@ -61,28 +61,38 @@ function collectAfterResponse(req) {
   req.on('error', error => console.error('Erro ao receber notificação:', error.message));
 }
 
+function oauthCallback(url, res) {
+  const target = new URL(LOCAL_CALLBACK_URL);
+  for (const key of ['code', 'state', 'error', 'error_description']) {
+    const value = url.searchParams.get(key); if (value) target.searchParams.set(key, value);
+  }
+  if (![...target.searchParams.keys()].length) return json(res, 200, { ok: true, route: 'oauth-callback', localCallback: LOCAL_CALLBACK_URL });
+  res.writeHead(302, {
+    location: target.toString(),
+    'content-type': 'text/plain; charset=utf-8',
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'no-referrer'
+  });
+  return res.end('Redirecionando para o Colli Marketplace Manager...');
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const p = url.pathname;
 
-  if (p === '/' || p === '/api/health') {
-    return json(res, 200, { ok: true, service: 'colli-bridge', version: '1.0.0', queuedEvents: events.length, time: new Date().toISOString() });
+  if (p === '/' && req.method === 'GET') {
+    const hasOAuthParams = ['code', 'state', 'error', 'error_description'].some(key => url.searchParams.has(key));
+    if (hasOAuthParams) return oauthCallback(url, res);
+    return json(res, 200, { ok: true, service: 'colli-bridge', version: '1.1.0', queuedEvents: events.length, time: new Date().toISOString() });
+  }
+
+  if (p === '/api/health') {
+    return json(res, 200, { ok: true, service: 'colli-bridge', version: '1.1.0', queuedEvents: events.length, time: new Date().toISOString() });
   }
 
   if (p === '/api/ml/callback' && req.method === 'GET') {
-    const target = new URL(LOCAL_CALLBACK_URL);
-    for (const key of ['code', 'state', 'error', 'error_description']) {
-      const value = url.searchParams.get(key); if (value) target.searchParams.set(key, value);
-    }
-    if (![...target.searchParams.keys()].length) return json(res, 200, { ok: true, route: 'oauth-callback', localCallback: LOCAL_CALLBACK_URL });
-    res.writeHead(302, {
-      location: target.toString(),
-      'content-type': 'text/plain; charset=utf-8',
-      'cache-control': 'no-store',
-      'x-content-type-options': 'nosniff',
-      'referrer-policy': 'no-referrer'
-    });
-    return res.end('Redirecionando para o Colli Marketplace Manager...');
+    return oauthCallback(url, res);
   }
 
   if (p === '/api/ml/notifications' && req.method === 'GET') {
@@ -109,7 +119,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Colli Bridge 1.0.0 online na porta ${PORT}`);
+  console.log(`Colli Bridge 1.1.0 online na porta ${PORT}`);
   console.log(`Callback local: ${LOCAL_CALLBACK_URL}`);
   console.log(`Fila protegida: ${COLLI_BRIDGE_KEY ? 'sim' : 'NÃO — configure COLLI_BRIDGE_KEY'}`);
 });
